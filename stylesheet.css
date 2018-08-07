@@ -1,0 +1,82 @@
+  .header {
+    margin-top: 20px;
+    width: 904px;
+    margin-bottom: 0px;
+  }    
+
+    .header-block {
+      border-right: 1px solid black;
+      float: left;
+    }
+
+      .header-block-title {
+        font-family: 'Raleway', sans-serif;
+        font-size: 0.6em;
+        letter-spacing: 0.2em;
+        color: #606060;
+      }
+
+      .header-block-dropdown {
+        width: 190px;
+      }
+
+        .header-block-dropdown-select {
+          font-family: 'Raleway', sans-serif;
+          -webkit-appearance: none; box-shadow: none !important; 
+          width: 180px;
+        }
+
+      .header-block-zoom {
+        width: 568px;
+        padding:0 0 0 20px;
+      }
+
+        .header-block-zoom-slider {
+          width: 540px;
+          margin: 0;
+        }
+      
+      .header-block-export {
+        width: 195;
+        margin-left: 20px;
+      }
+        .header-block-export-button {
+              margin-top:17px;
+              margin-left: 20px;
+              background-color: #cdcbc3; 
+              border: none;
+              color: white;
+              padding: 10px 17px;
+              text-align: center;
+              text-decoration: none;
+              font-weight: 600;
+              display: inline-block;
+              font-size: 0.7em;
+              cursor: pointer;
+              -webkit-transition-duration: 0.3s; /* Safari */
+              transition-duration: 0.3s;
+              letter-spacing: 0.2em;
+        }
+
+        .header-block-export-button:hover {
+          background-color: black; /* Green */
+          color: white;
+        } 
+
+    svg { width:904px; height: 600px; margin-top: 20px; background-color:#cdcbc3;}
+
+    .city {
+      display: none; 
+    }
+
+
+    #container {width: 904px; height: 900px; margin: 0 auto; background-color: white;  }  
+    #legenda_blokje {fill:#fff;}
+    .highlighted {fill: #fff;}
+    #background_circle {fill: #d3cdc7;}
+    #globe_triangle {fill: #fff;}
+    .country_globe {fill: #f2f2f2; stroke: 1px #cdcbc3;}
+    .country {fill: #f2f2f2; stroke: #cdcbc3;}
+
+
+ 

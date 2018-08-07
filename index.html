@@ -1,8 +1,251 @@
 <!DOCTYPE html>
-<html>
+<head>
+  <meta charset="utf-8">
+  <script src="d3.min.js"></script>
+  <script src="topojson.v2.min.js"></script>  
+  <link rel="stylesheet" type="text/css" href="stylesheet.css">
+  <link href="https://fonts.googleapis.com/css?family=Raleway:700" rel="stylesheet">
+</head>
+
 <body>
 
+  <div id="container">
+
+    <div class="header">
+    	
+    	<div class="header-block header-block-dropdown">
+    		<p class="header-block-title">LAND</p>
+		</div>
+		
+		<div class="header-block header-block-zoom">
+    		<p class="header-block-title">ZOOMNIVEAU</p>
+    		<input type="range" class="header-block-zoom-slider" id="myRange" max='3000' min='100' value="1" step="-1" oninput="zoomVar_function(this.value)" onchange="zoomVar_function(this.value)">
+		</div>
+
+		<div class="header-block-export">
+			<button class="header-block-export-button">OPSLAAN</button>
+		</div>
+
+		<div id="map"></div>
+
+		<div class="header-block">
+			<p class="header-block-title">LAND</p>
+		</div>
+
+    	
+
+   </div> <!-- menu -->
+
+    <script>
 
 
+    	// select en maak dropdown menu
+    	var dropDown = d3.select(".header-block-dropdown").append("select").attr("id", "country-list").attr("class", "header-block-dropdown-select");
+
+		// verzamel csv data en wijs ze toe aan dropdown
+    	d3.csv("middelpunten_van_landen_wereld.csv", function(error, d) {
+   
+  		    // wijs data toe aan dropdown
+    		var options = dropDown.selectAll("option")
+	            .data(d) 
+	            .enter()
+	            .append("option")
+	            .text(function (d) {
+	            	return d.ADMIN
+	            })
+
+	        // store deze gekozen index in variabel
+	        var country_index = [1];
+	            
+	        // Check of dropdown is veranderd en verander index
+	        dropDown
+	        	.data(d)
+				.on("change", function(d) {
+			    	var country_index = document.getElementById("country-list").selectedIndex;
+			    	lat_lon_vanuit_land(country_index)
+			  	});
+	               
+	        // nieuwe coordinaten die de kaart opnieuw renderen
+	        function lat_lon_vanuit_land(country_index) {
+		        map_properties.center_lat = d[country_index].X;
+		        map_properties.center_lon = d[country_index].Y;
+		        map_big();
+		        smallGlobe(map_properties.center_lon,map_properties.center_lat);	
+        	}    
+
+  		});
+
+    	// Zoomfunctie
+      	function zoomVar_function(zoomLevel) {
+            map_properties.zoom_level = Number(zoomLevel);
+            map_big();
+            smallGlobe(map_properties.center_lon,map_properties.center_lat);	
+
+        }  
+
+        // Store all map properties
+        var map_properties = {   
+          center_lat: 50,
+          center_lon: 21,
+          zoom_level: 1000
+        };
+
+        var width = 904,
+            height = 600;
+
+        var svg = d3.select("#map").append("svg").attr("width", width).attr("height", height);
+
+        // Make layers for the map and the globe
+        var grote_kaart_laag = svg.append('g');
+		var triangle_layer   = svg.append('g');
+
+   
+    // Maken van de kaart
+    function map_big() {
+     
+        d3.select("svg")
+          .selectAll("path")
+          .remove();  
+
+        d3.select("svg")
+          .selectAll("text")
+          .remove();  
+
+        d3.select("svg")
+          .selectAll(".city")
+          .remove();  
+
+          d3.queue()
+          	.defer(d3.csv,"simplemaps-worldcities-basic.csv")
+			.defer(d3.csv, "country_codes.csv")
+            .defer(d3.json,"world-50m.v1.json")
+            .await(ready);
+
+          // projection geoOrthographic
+           var projection = d3.geoMercator()
+              .scale(map_properties.zoom_level)
+              .rotate([0, 0])
+              .center([map_properties.center_lat, map_properties.center_lon])
+              .translate([width / 2, height / 2]);
+
+	        var path = d3.geoPath()
+	            .projection(projection);
+
+
+		        function ready(error, cities, countryCodes , world) {
+		            
+					var countries = topojson.feature(world, world.objects.countries).features;
+		           	
+		        	// combine countrycodes and world data by id
+		        	countries.forEach(function(country){
+
+		        		var result = countryCodes.filter(function(code){
+		        			return code.country_code === country.id;
+		        		});
+		        		// delete country.id;
+		        		country.name = (result[0] !== undefined) ? result[0].name : null;
+		        	});
+		        	
+		           	grote_kaart_laag.selectAll(".country")
+			             .data(countries)
+			             .enter().append("path")
+			             .attr("class", "country")
+			             .attr("d", path)
+			             .on("click", function(d){
+			              	
+			              	node = d3.select(this);
+			              	node.style("fill", "white");
+			              	var country_name = d3.select(this).datum().name;
+			              	node.append("text").text(country_name).attr("x",20).attr("y",20);
+			              	console.log(country_name);
+
+		            });
+
+		            // add cities
+	      			grote_kaart_laag.selectAll(".city")
+		      			.data(cities)
+		      			.enter()
+		      			.append("circle")
+		      			.attr("class", "city")
+		      			.attr("class", function(d){ return(d.country)})
+		      			.attr("cx",function(d){ return projection([d.lng, d.lat])[0] })
+		      			.attr("cy",function(d){ return projection([d.lng, d.lat])[1] })
+		      			.attr("style", "display:none")
+		      			.attr("r",2);
+
+	          
+	      		};
+     
+          };  
+
+
+    // maken van globe
+    function smallGlobe(lat, lon) {
+       
+    	d3.select("svg")
+          .selectAll("#globe_triangle")
+          .remove();  
+
+       // driehoek achter de globe
+       triangle_layer.append("polyline")
+			.attr("points", "0,350 0,600 250,600")
+			.attr("id", "globe_triangle");
+
+
+    	d3.select("svg")
+          .selectAll("country_globe")
+          .remove();  
+
+        d3.select("svg")
+          .selectAll("#background_circle")
+          .remove();  
+	
+	    var legenda_width  = 300,
+	    	legenda_height = 300;
+
+	    var legenda_scale   = 100;
+	    var lat_lon = [lat , lon];
+
+	    var backgroundCircle = svg.append("circle")
+		        .attr('cx', 130)
+		        .attr('cy', height-130)
+		        .attr('r', legenda_scale)
+		        .attr('id', 'background_circle');
+
+
+	    d3.queue()
+	    	.defer(d3.json,"https://d3js.org/world-110m.v1.json")
+	    	.await(ready);
+
+	    // projection geoOrthographic
+	    var projection = d3.geoOrthographic()
+	  		.rotate([-[lat_lon[1]], -[lat_lon[0]]])
+	  		.scale(legenda_scale) 
+			.translate([(width / 2)-320, (height / 2)+168]);
+
+	    var path = d3.geoPath()
+	    			.projection(projection);
+
+	    
+	    function ready(error, data) {
+
+	    	var countries = topojson.feature(data, data.objects.countries).features;
+
+	    	svg.selectAll(".country_globe")
+	    		.data(countries)
+	    		.enter().append("path")
+	    		.attr("class", "country_globe")
+	    		.attr("d", path)
+	    }
+
+
+
+	}; 
+
+
+
+
+            
+    </script>
+  </div>
 </body>
-</html>
